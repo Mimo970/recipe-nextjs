@@ -4,16 +4,10 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
-
 import React, { useState } from "react";
 import { MdAddPhotoAlternate } from "react-icons/md";
 import { auth, storage, db } from "../../firebase";
-import {
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-  getStorage,
-} from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { doc, setDoc } from "firebase/firestore";
 import Link from "next/link";
 
@@ -24,15 +18,27 @@ const RegisterPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [file, setFile] = useState("");
-  const [error, setError] = useState(false);
-  console.log(file);
+  const [error, setError] = useState("");
+
+  const getFriendlyErrorMessage = (errorCode) => {
+    switch (errorCode) {
+      case "auth/email-already-in-use":
+        return "The email address is already in use by another account.";
+      case "auth/invalid-email":
+        return "The email address is not valid.";
+      case "auth/operation-not-allowed":
+        return "Email/password accounts are not enabled.";
+      case "auth/weak-password":
+        return "The password is too weak. Please use a stronger password.";
+      default:
+        return "An unexpected error occurred. Please try again.";
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // console.log(username, email, password, file);
     try {
-      //   const auth = getAuth();
       const response = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -59,7 +65,9 @@ const RegisterPage = () => {
           }
         },
         (error) => {
-          setError(true);
+          const errorCode = error.code;
+          const errorMessage = getFriendlyErrorMessage(errorCode);
+          setError(errorMessage);
           console.log(error);
         },
         () => {
@@ -81,8 +89,10 @@ const RegisterPage = () => {
         }
       );
     } catch (error) {
+      const errorCode = error.code;
+      const errorMessage = getFriendlyErrorMessage(errorCode);
+      setError(errorMessage);
       console.log(error);
-      setError(true);
     }
   };
 
@@ -151,6 +161,8 @@ const RegisterPage = () => {
         >
           Register
         </button>
+
+        {error && <div className="text-red-500 mt-2">{error}</div>}
 
         <p>
           Already have an account? &nbsp;

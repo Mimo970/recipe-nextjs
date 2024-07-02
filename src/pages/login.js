@@ -7,7 +7,6 @@ import {
 import React, { useState } from "react";
 import { MdAddPhotoAlternate } from "react-icons/md";
 import { auth, storage, db } from "../../firebase";
-
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -16,40 +15,51 @@ const LoginPage = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const [error, setError] = useState(false);
+  const getFriendlyErrorMessage = (errorCode) => {
+    switch (errorCode) {
+      case "auth/invalid-email":
+        return "The email address is not valid.";
+      case "auth/user-disabled":
+        return "The user corresponding to the given email has been disabled.";
+      case "auth/user-not-found":
+        return "There is no user corresponding to the given email.";
+      case "auth/wrong-password":
+        return "Invalid User Credentials.";
+      case "auth/too-many-requests":
+        return "Too many unsuccessful login attempts. Please try again later.";
+      default:
+        return "An unexpected error occurred. Please try again.";
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // console.log(username, email, password, file);
     try {
       const auth = getAuth();
       await signInWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
-          // Signed in
           const user = userCredential.user;
-          // console.log(user);
           router.push("/");
-
-          // ...
         })
         .catch((error) => {
           const errorCode = error.code;
-          const errorMessage = error.message;
+          const errorMessage = getFriendlyErrorMessage(errorCode);
+          setError(errorMessage); // Set the user-friendly error message
         });
     } catch (error) {
-      setError(true);
+      setError("An unexpected error occurred. Please try again."); // Set a generic error message for unexpected errors
     }
   };
 
   return (
-    <div className="bg-zinc-800  text-white h-screen flex justify-center items-center">
+    <div className="bg-zinc-800 text-white h-screen flex justify-center items-center">
       <form
         onSubmit={handleSubmit}
         className="bg-zinc-700 w-96 p-6 rounded-lg shadow-xl"
       >
-        <h2 className="text-xl font-bold mb-4">Register</h2>
+        <h2 className="text-xl font-bold mb-4">Login</h2>
 
         <div className="mb-4">
           <label htmlFor="email" className="block font-bold mb-2">
@@ -82,10 +92,13 @@ const LoginPage = () => {
         >
           Sign in
         </button>
-        <p>
+
+        {error && <div className="text-red-500 mt-2">{error}</div>}
+
+        <p className="mt-4">
           You don't have an account?&nbsp;
           <Link href="/register">
-            <span className="underline underline-offset-1 text-sky-600  ">
+            <span className="underline underline-offset-1 text-sky-600">
               Register
             </span>
           </Link>
